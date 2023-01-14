@@ -1,0 +1,33 @@
+name: Node.js 
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+    Build_Deploy_Dev:
+        runs-on: ubuntu-18.04
+        steps:
+            - name: Checkout Branch
+              uses: actions/checkout@v2
+          
+            - name: Write Commend
+              uses: appleboy/ssh-action@master
+              with: 
+                  key: ${{ secrets.EC2_PEM }}
+                  host: ${{ secrets.EC2_HOST }}
+                  username: ubuntu
+                  script: |
+                      cd omg-server
+                      git pull origin master
+                      touch .env
+                      cat << EOF >> .env
+                      ${{ secrets.ENV }}
+                      EOF
+                      
+                      yarn
+                      yarn build
+                      pm2 stop main
+                      pm2 delete main
+                      yarn pm2
